@@ -23,6 +23,8 @@
 require_once "app/controllers/studip_controller.php";
 require_once dirname(dirname(__FILE__)) . "/vendor/php-activerecord/ActiveRecord.php";
 
+require_once dirname(dirname(__FILE__)) . "/phpar.php";
+
 abstract class ApplicationController extends StudipController
 {
     function before_filter(&$action, &$args)
@@ -31,22 +33,9 @@ abstract class ApplicationController extends StudipController
 
         $this->flash = Trails_Flash::instance();
 
-        ActiveRecord\Config::initialize(
-            function($cfg)
-            {
-                $cfg->set_model_directory(dirname(dirname(__FILE__)) . '/models');
-                $cfg->set_connections(
-                    array(
-                        'development' => sprintf('mysql://%s:%s@%s/%s',
-                                                 $GLOBALS['DB_STUDIP_USER'],
-                                                 $GLOBALS['DB_STUDIP_PASSWORD'],
-                                                 $GLOBALS['DB_STUDIP_HOST'],
-                                                 $GLOBALS['DB_STUDIP_DATABASE']
-                        )
-                    )
-                );
-            }
-        );
+        $this->plugin = $this->dispatcher->plugin;
+
+        \ACC\initActiveRecord();
     }
 
     function render_json($data)
@@ -131,4 +120,18 @@ abstract class ApplicationController extends StudipController
         $this->set_layout($template_factory->open("layouts/base_without_infobox"));
     }
 
+
+    function parseRequestBody()
+    {
+
+        if ($this->format === 'json') {
+        $body = file_get_contents('php://input');
+            $decoded = json_decode($body, true);
+            if (!is_null($decoded)) {
+                return $decoded;
+            }
+       }
+
+        return null;
+    }
 }

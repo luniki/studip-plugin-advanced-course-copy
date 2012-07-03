@@ -29,58 +29,73 @@ class ListsController extends ApplicationController
     {
         parent::before_filter($action, $args);
 
-        # /lists
-        if ('index' === $action) {
-            self::require_allowed_method('GET', 'POST');
-            if ('POST' === self::get_method()) {
-                $action = 'create';
-            }
-            return;
-        }
-
-        # :id consists of digits
-        if (!preg_match('/\d+/A', $action)) {
-            # TODO remove after debug
-            # return false;
-            return;
-        }
-
-        # /lists/:id/tasks
+        # /lists/:list_id/tasks/...
         if ('tasks' === @$args[0]) {
+            # action contains list_id, move it to args
             $args[0] = $action;
             $action = 'tasks';
         }
 
-        # /lists/:id
-        else {
-            $args = array($action);
-            $action = self::map_method_to_action();
+        # initialize list
+        if (isset($args[0])) {
+            $this->list = TodoList::find($args[0]);
         }
+
+        # setup layout
+        if ($this->respond_to('html') ||
+            in_array($action, words('new edit'))) {
+
+            $this->setBaseLayout();
+        }
+
+        return $this->must_authorize($action);
+    }
+
+
+    private function must_authorize($action)
+    {
+
+        if ($this->list->owner_type == 'copied_course') {
+            if ($this->course_permission('dozent')) {
+                return TRUE;
+            } else if ($this->course_permission('tutor')) {
+                return $action == 'show';
+            }
+        }
+
+        return FALSE;
+    }
+
+    function course_permission($role)
+    {
+        global $perm, $SessSemName;
+        return $perm->have_studip_perm($role, $SessSemName[1]);
     }
 
     function index_action()
     {
-        $lists = array_map(function ($t) {
-                return $t->to_array();
-            }, TodoList::all());
+        $this->lists = TodoList::all();
 
-        $this->render_json($lists);
+        if (!$this->respond_to('html')) {
+            $this->render_json(array_map(function ($t) {
+                        return $t->to_array();
+                    }, $this->lists));
+        }
     }
 
     function show_action($list_id)
     {
-        $this->render_json(TodoList::find($list_id)->to_array());
+        if (!$this->respond_to('html')) {
+            $this->render_json($this->list->to_array());
+        }
     }
 
     function new_action()
     {
-        $this->setBaseLayout();
     }
 
     function edit_action($list_id)
     {
-        $this->setBaseLayout();
-        $this->list = TodoList::find($list_id);
     }
 
     function create_action()
@@ -88,7 +103,7 @@ class ListsController extends ApplicationController
         $params = Request::getArray('list');
         $list = TodoList::create(array('description' => $params['description']));
         if ($list) {
-            $this->redirect('lists/' . $list->id);
+            $this->redirect('lists/show/' . $list->id);
         }
         else {
             # TODO
@@ -99,10 +114,9 @@ class ListsController extends ApplicationController
     {
         $params = Request::getArray('list');
 
-        $list = TodoList::find($list_id);
-        $list->description = $params['description'];
-        if ($list->save()) {
-            $this->redirect('lists/' . $list->id);
+        $this->list->description = $params['description'];
+        if ($this->list->save()) {
+            $this->redirect('lists/show/' . $this->list->id);
         }
         else {
             # TODO
@@ -111,20 +125,36 @@ class ListsController extends ApplicationController
 
     function destroy_action($list_id)
     {
-        $list = TodoList::find($list_id);
-        if ($list->delete()) {
-            $this->render_nothing();
+        $deleted = $this->list->delete();
+
+        if ($deleted) {
+            if ($this->respond_to('html')) {
+                $this->redirect('lists/index');
+            } else {
+                $this->render_nothing();
+            }
         }
         else {
             # TODO
+            throw new Trails_Exception(500);
         }
     }
 
     function tasks_action($list_id)
     {
         $tasks_controller = $this->dispatcher->load_controller('tasks');
-        $tasks_controller->list = TodoList::find($list_id);
-        $this->response = $tasks_controller->perform(join('/', func_get_args()));
+        $tasks_controller->list = $this->list;
+
+        # /lists/:list_id/tasks/{args[1..]}
+        $args = array_slice(func_get_args(), 1);
+
+        $unconsumed = join('/', $args) ?: 'index';
+
+        if ($this->format) {
+            $unconsumed .= "." . $this->format;
+        }
+
+        $this->response = $tasks_controller->perform($unconsumed);
         $this->performed = TRUE;
     }
 

@@ -29,85 +29,90 @@ class TasksController extends ApplicationController
     {
         parent::before_filter($action, $args);
 
-        # /tasks
-        if ('index' === $action) {
-            self::require_allowed_method('GET', 'POST');
-            if ('POST' === self::get_method()) {
-                $action = 'create';
-            }
-        }
-
-        else {
-
-            # :id consists of digits
-            if (!preg_match('/\d+/A', $action)) {
-                # TODO remove after debug
-                # return false;
-                return;
-            }
-
-        # /lists/:id/tasks
-        if ('tasks' === @$args[0]) {
-            $args[0] = $action;
-            $action = 'tasks';
-        }
-
-        # /lists/:id
-        else {
-            $args = array($action);
-            $action = self::map_method_to_action();
-        }
-
-
-
-
-
-        if (preg_match('/\d+/A', $action)) {
-            $this->task_id = $action;
-            $action = self::map_method_to_action();
-        }
-
-        }
-
-        # need list unless index or create
-        if (in_array($action, words('index create'))
-            && !$this->list) {
+        # need list if index or create
+        # TODO: entweder selbst noch einmal authorisieren für #show,
+        #       #delete, #update, oder immer eine Liste fordern, die
+        #       aus dem lists-Controller kommt, der selbst authorisiert
+        if (in_array($action, words('index new create')) && !$this->list) {
             throw new Trails_Exception(405);
+        }
+
+        if ($this->respond_to('html') || in_array($action, words('new edit'))) {
+            $this->setBaseLayout();
         }
     }
 
     function index_action()
     {
-        $tasks = array_map(function ($t) {
-                return $t->to_array();
-            }, $this->list->tasks);
-
-        $this->render_json($tasks);
+        if (!$this->respond_to('html')) {
+            $this->render_json(array_map(function ($t) {
+                        return $t->to_array();
+                    }, $this->list->tasks));
+        }
     }
 
-    function show_action()
+    function show_action($task_id)
     {
-        #        $todo = Todo::create(array('description' => 'something', 'state' => 'incomplete'));
+        $this->task = Task::find($task_id);
 
-        #        array_walk(Todo::find('all'), function ($t) {
-        #                var_dump($t->to_json());
-        #            });
-
-        $this->render_json(Task::find($this->task_id)->to_array());
+        if (!$this->respond_to('html')) {
+            $this->render_json($this->task->to_array());
+        }
     }
 
-     function create_action()
+    function new_action()
+    {
+    }
+
+    function edit_action($task_id)
+    {
+        $this->task = Task::find($task_id);
+    }
+
+
+    function create_action()
+    {
+        $params = Request::getArray('task');
+        $task = Task::create(
+            array(
+                'short_description'  => $params['short_description']
+                , 'long_description' => $params['long_description']
+                , 'todo_list_id'     => $this->list->id
+            )
+        );
+
+        if ($task) {
+            $format = $this->format ?: 'html';
+            $this->redirect('lists/' . $this->list->id . '/tasks/show/' . $task->id . $format);
+        }
+        else {
+            # TODO
+        }
+    }
+
+     function update_action($task_id)
      {
-         $this->render_text(__METHOD__);
+         $attributes = $this->parseRequestBody();
+         $task = Task::find($task_id);
+         $status = $task->update_attributes($attributes);
+
+         if ($this->respond_to('json')) {
+             if ($status) {
+                 $this->render_json($task->to_array());
+             }
+             else {
+                 throw new Trails_Exception(400);
+             }
+         }
+         else {
+             throw new Trails_Exception(500);
+         }
      }
 
-     function update_action()
+     /*
+     function destroy_action($task_id)
      {
          $this->render_text(__METHOD__);
      }
-
-     function destroy_action()
-     {
-         $this->render_text(__METHOD__);
-     }
+     */
 }

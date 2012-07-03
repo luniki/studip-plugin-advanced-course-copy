@@ -19,9 +19,33 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 require 'ACCCourse.php';
 require 'CourseCopier.php';
+
+class ACCNavigation extends Navigation
+{
+
+    function isVisible($needs_image = false)
+    {
+        $params = URLHelper::getLinkParams();
+        if (!isset($params['cid'])) {
+            return false;
+        }
+
+        return parent::isVisible($needs_image);
+    }
+
+    function setDescription($lazyDescription)
+    {
+        $this->lazyDescription = $lazyDescription;
+    }
+
+    function getDescription()
+    {
+        $callable = $this->lazyDescription;
+        return $callable();
+    }
+}
 
 class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 {
@@ -29,29 +53,99 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
     {
         parent::__construct();
 
-        if (Navigation::hasItem('/course')) {
-            $this->setupNavigation();
-        }
+        $this->setupNavigation();
     }
 
     function setupNavigation()
     {
-        $course_nav = new Navigation('ACC');
+        # require context for anything
+        if (!($context = $this->getContext())) {
+            return;
+        }
+
+        $this->setupWhatsNextNavigation($context);
+        $this->setupCopyCourseNavigation($context);
+    }
+
+    function setupWhatsNextNavigation($context)
+    {
+        # setup "what's next" links
+        $course = new \ACC\Course($context);
+        if ($course->hasTodoList()) {
+
+            $nav = $this->createWhatsNext();
+
+            # put "what's next" to the left in "Verwaltung" for admin and root
+            if (Navigation::hasItem('/admin/course')) {
+                Navigation::insertItem('/admin/course/whatsnext', $nav, 'details');
+            }
+
+            # put "what's next" to the left in "Verwaltung" for dozent and tutor
+            if (Navigation::hasItem('/course/admin/main')) {
+                Navigation::insertItem('/course/admin/whatsnext', $nav, 'main');
+            }
+
+            $admin_nav = clone $nav;
+            $admin_nav->setTitle(_('Administration dieser Veranstaltung'));
+
+            # redirect course link "Verwaltung" to "what's next"
+            if (Navigation::hasItem('/course/main/admin')) {
+                Navigation::addItem('/course/main/admin', $admin_nav);
+            }
+        }
+    }
+
+
+    function createWhatsNext()
+    {
+        $nav = new ACCNavigation('What\'s next?');
+        $nav->setURL(PluginEngine::getURL($this, array(), 'whatsnext'));
+        $nav->setDescription(
+            function () {
+                    return "Ergänzen Sie Ihre gerade kopierte Veranstaltung noch um die 4 offenen Punkte.";
+            }
+        );
+        return $nav;
+    }
+
+    function setupCopyCourseNavigation($context)
+    {
+        # replace course copy links
+
+        $course_nav = new Navigation('Veranstaltung kopieren (+)');
         $course_nav->setURL(PluginEngine::getURL($this));
+        $course_nav->setImage('icons/16/black/add/seminar.png" class="plugin-acc-copy');
 
-        $course_nav->addSubNavigation('show', new Navigation(_('ACC'), PluginEngine::getURL($this)));
-        $course_nav->addSubNavigation('todo', new Navigation(_('2do'), PluginEngine::getURL("Todos", array(), "")));
+        if (Navigation::hasItem('/admin/course')) {
+            Navigation::addItem('/admin/course/copy', $course_nav);
+        }
 
-        Navigation::addItem('/course/acc', $course_nav);
+        if (Navigation::hasItem('/course/admin/main')) {
+            Navigation::addItem('/course/admin/main/copy', $course_nav);
+        }
+    }
 
+    function isCopiedContext()
+    {
+        $context = $this->getContext();
+        if ($context) {
+            $course = new \ACC\Course($context);
+            if ($course->getSourceCourse()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function requireContext()
     {
-        if (!$this->getContext()) {
+        $context = $this->getContext();
+        if (!$context) {
             header("HTTP/1.1 400 Bad Request", TRUE, 400);
             throw new Exception("Bad Request");
         }
+
+        return new \ACC\Course($context);
     }
 
     function getContext()
@@ -67,14 +161,38 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
     function getBaseLayout()
     {
         global $template_factory;
-        return $template_factory->open("layouts/base_without_infobox");
+        return $template_factory->open("layouts/base");
+    }
+
+
+    function activateNavigation()
+    {
+        if (Navigation::hasItem('/admin/course/copy')) {
+            Navigation::activateItem('/admin/course/copy');
+        }
+
+        if (Navigation::hasItem('/course/admin/main')) {
+            Navigation::activateItem('/course/admin/main');
+        }
+    }
+
+
+    function authorize($course)
+    {
+        global $perm, $SessSemName;
+        if (!$perm->have_studip_perm("dozent", $course->getId())) {
+            throw new AccessDeniedException("Not authorized");
+        }
     }
 
     function show_action()
     {
-        $this->requireContext();
 
-        $course           = new Seminar($this->getContext());
+        $course = $this->requireContext();
+        $this->authorize($course);
+
+        $this->activateNavigation();
+
         $semesters        = Semester::getAll();
         $next_semester    = Semester::findNext();
         $plugin           = $this;
@@ -94,9 +212,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
                     'label' => _("Wikieinträge"))
         );
 
-
-        Navigation::activateItem('/course/acc');
-
         $factory = $this->getTemplateFactory();
         echo $factory->render("show",
                               compact(words("course semesters next_semester plugin modules")),
@@ -106,73 +221,41 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
     function copy_action()
     {
-        $this->requireContext();
+        $course = $this->requireContext();
+        $this->authorize($course);
 
         $plugin = $this;
-
-        $src = new \ACC\Course($this->getContext());
 
         # TODO semester checken
         $semester = Request::option("semester");
         $modules = Request::getArray("modules");
 
-        $db = DBManager::get();
-        $db->beginTransaction();
-        #*************************************************************
+        $copier = new \ACC\CourseCopier($course->getId());
+        $copy = $copier->copy($semester, $modules);
 
-        $copy = $this->copy($this->getContext(), $semester, $modules);
+        header('Location: ' . PluginEngine::getURL($this, array('cid' => $copy->getId()), 'whatsnext'));
+    }
+
+
+    function whatsnext_action()
+    {
+
+        $course = $this->requireContext();
+        $this->authorize($course);
+
+        if (Navigation::hasItem('/course/admin/whatsnext')) {
+            Navigation::activateItem('/course/admin/whatsnext');
+        }
+        else if (Navigation::hasItem('/admin/course/whatsnext')) {
+            Navigation::activateItem('/admin/course/whatsnext');
+        }
+
+        $plugin = $this;
+        $list = $course->getTodoList();
 
         $factory = $this->getTemplateFactory();
-        echo $factory->render("copy",
-                              compact(words("src copy plugin")),
+        echo $factory->render("whatsnext",
+                              compact(words("course plugin list")),
                               $this->getBaseLayout());
-
-        $copy->delete();
-
-        #*************************************************************
-        $db->rollBack();
-    }
-
-
-    function copy($id, $target_semester, $modules)
-    {
-        $copier = new \ACC\CourseCopier($id);
-        $copy = $copier->copy($target_semester, $modules);
-
-        return $copy;
-    }
-
-    function ar_action()
-    {
-        echo __METHOD__;
-
-        require dirname(__FILE__) . "/vendor/php-activerecord/ActiveRecord.php";
-
-        ActiveRecord\Config::initialize(
-            function($cfg)
-            {
-                $cfg->set_model_directory(dirname(__FILE__) . '/models');
-                $cfg->set_connections(
-                    array(
-                        'development' => sprintf('mysql://%s:%s@%s/%s',
-                                                 $GLOBALS['DB_STUDIP_USER'],
-                                                 $GLOBALS['DB_STUDIP_PASSWORD'],
-                                                 $GLOBALS['DB_STUDIP_HOST'],
-                                                 $GLOBALS['DB_STUDIP_DATABASE']
-                        )
-                    )
-                );
-            }
-        );
-
-        $todo = Todo::create(array('description' => 'something', 'state' => 'incomplete'));
-
-        array_walk(Todo::find('all'), function ($t) {
-                var_dump($t->to_json());
-            });
-
-        array_walk(TodoList::find('all'), function ($t) {
-                var_dump($t->to_json());
-            });
     }
 }

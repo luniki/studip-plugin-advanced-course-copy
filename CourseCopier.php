@@ -52,6 +52,13 @@ class CourseCopier
         $this->copySCM($copy, $modules);
         $this->copyWiki($copy, $modules);
 
+        # TODO die DFS muss schon da sein
+        #self::createDataFieldStructures();
+
+        $copy->setSourceCourse($this->source);
+
+        $copy->createTodoList();
+
         return $copy;
     }
 
@@ -169,33 +176,6 @@ class CourseCopier
         }
 
         $copy->addMember($user_id, 'dozent');
-    }
-
-    # TODO
-    function getDefaultLecturer()
-    {
-        return;
-    }
-
-    # TODO
-    function createDefaultLecturer()
-    {
-         $newuser = array(
-             'auth_user_md5.username'    => '__strawman',
-             'auth_user_md5.Vorname'     => 'N.',
-             'auth_user_md5.Nachname'    => 'N.',
-             'auth_user_md5.Email'       => $this->user['Email'],
-             'auth_user_md5.perms'       => $this->user['perm'],
-             'auth_user_md5.auth_plugin' => $this->user['auth_plugin'],
-             'auth_user_md5.visible'     => $this->user['visible'],
-             'user_info.title_front'     => '',
-             'user_info.title_rear'      => '',
-             'user_info.geschlecht'      => '',
-            );
-
-            //create new user
-         $userManagement = new UserManagement();
-         return $userManagement->createNewUser($newuser);
     }
 
     function copyStudyAreas($copy)
@@ -329,7 +309,6 @@ class CourseCopier
     function copyFolder($copy, $folder_id, $target_id)
     {
         $done = copy_item($folder_id, $target_id, $copy->getId());
-        var_dump($done);
         if (!$done) {
             # TODO hier und generell
         }
@@ -375,6 +354,12 @@ class CourseCopier
             return;
         }
 
+        $lit = $this->source->getLiterature();
+
+        if (!sizeof($lit['lists'])) {
+            return;
+        }
+
         $db = \DBManager::get();
 
         $list_query = $db->prepare(
@@ -396,8 +381,6 @@ class CourseCopier
             "FROM lit_list_content ".
             "WHERE list_id IN (?)"
         );
-
-        $lit = $this->source->getLiterature();
 
         $item_query->execute(array($copy->getId(),
                                    $copy->getId(),
@@ -478,5 +461,33 @@ class CourseCopier
                     get_fullname($auth->auth["uid"]),
                     _("Hier ist Raum für allgemeine Diskussionen"),
                     0, 0, $copy->getId());
+    }
+
+
+    static function createDataFieldStructures()
+    {
+        require_once 'lib/classes/DataFieldStructure.class.php';
+
+        $structures = array(
+            \ACC\Course::DATAFIELD_SOURCE_ID => 'ID of original course'
+        );
+
+
+        foreach ($structures as $id => $name) {
+
+            $dfs = new DataFieldStructure(
+                array(
+                    'datafield_id' => $id,
+                    'name'         => $name,
+                    'object_type'  => 'sem',
+                    'edit_perms'   => 'root',
+                    'view_perms'   => 'all',
+                    'priority'     => '0',
+                    'type'         => 'textline',
+                    'typeparam'    => ''
+                ));
+
+            $dfs->store();
+        }
     }
 }

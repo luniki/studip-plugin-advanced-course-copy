@@ -1,0 +1,120 @@
+#plugin-acc label {
+  display: block;
+}
+
+form.plugin-acc-copy fieldset {
+  margin-bottom: 1.5em;
+  border: none;
+}
+form.plugin-acc-copy legend {
+  background: url("../../../../assets/images/icons/16/grey/arr_1right.png") no-repeat 0 50%;
+  padding: 1em 0 1em 20px;
+  font-size: 1.2em;
+}
+
+form.plugin-acc-copy label {
+  display: inline-block;
+  line-height: 1.8;
+  vertical-align: top;
+}
+
+form.plugin-acc-copy select, form.plugin-acc-copy label {
+  margin-left: 2em;
+}
+
+form.plugin-acc-copy fieldset li {
+  list-style: none;
+  padding: 5px;
+  margin: 0;
+}
+
+form.plugin-acc-copy .button-group {
+  margin-left: 14px;
+}
+
+
+#todoapp form {
+  padding: 40px;
+}
+
+.todo-list {
+  margin-top: 10px;
+}
+
+.todo-list li {
+  position: relative;
+  line-height: 1.1em;
+  border-bottom: 1px solid #cccccc;
+  list-style: none;
+  font-size: 24px;
+}
+
+.todo-list .check {
+  position: relative;
+  top: 9px;
+  margin: 0 10px 0 7px;
+  float: left;
+}
+
+.todo-list .done .todo-content {
+  text-decoration: line-through;
+  color: #777777;
+}
+
+.todo-list .todo {
+  position: relative;
+  padding: 12px;
+}
+
+.todo-list .saving .todo:before {
+  content: " ";
+  position: absolute;
+  cursor: pointer;
+  top: 20px;
+  left: 0px;
+  width: 16px;
+  height: 16px;
+  background: url("../../../../assets/images/ajax_indicator_small.gif") no-repeat 0 0;
+  opacity: 0.25;
+}
+
+/*
+.todo-list .saving .check {
+  visibility: hidden;
+}
+*/
+
+/* switch long content */
+
+.todo-list .todo-switch-content {
+  background: url("../../../../assets/images/icons/16/blue/question-circle.png") no-repeat 50% 50%;
+  display: inline-block;
+  opacity: 0.2;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  padding: 0 5px;
+  -webkit-transition: 0.2s ease-in;
+  -moz-transition: 0.2s ease-in;
+  -ms-transition: 0.2s ease-in;
+  -o-transition: 0.2s ease-in;
+  transition: 0.2s ease-in;
+}
+
+.todo-list .todo:hover .todo-switch-content {
+  opacity: 1;
+}
+
+.todo-list .todo-long-content {
+  display: block;
+  display: none;
+
+  font-size: 12px;
+  padding: 6px 30px 0px;
+  color: #333333;
+}
+
+.todo-list .todo-show-long-content .todo-long-content {
+  display: block;
+}

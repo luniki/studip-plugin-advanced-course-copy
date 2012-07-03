@@ -1,4 +1,4 @@
-<form action="<?= $controller->url_for('lists') ?>" method="post">
+<form action="<?= $controller->url_for('lists/create') ?>" method="post">
 
      <label>
      Beschreibung:

@@ -1,7 +1,7 @@
 <?
 namespace ACC;
 
-require 'XML/Serializer.php';
+require_once 'phpar.php';
 
 class Course extends \Seminar
 {
@@ -9,6 +9,8 @@ class Course extends \Seminar
 
     function toXML()
     {
+        require_once 'XML/Serializer.php';
+
         $data = $this->old_settings;
 
 
@@ -172,4 +174,83 @@ class Course extends \Seminar
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    # MD5('ACC') == 'c4fd1ef4041f00039def6df0331841de'
+    const DATAFIELD_SOURCE_ID = 'c4fd1ef4041f00039def6df0331841de';
+
+    function setSourceCourse($source)
+    {
+        require_once 'lib/classes/DataFieldEntry.class.php';
+
+        $entries = \DataFieldEntry::getDataFieldEntries($this->getId(), 'sem');
+        $entries[self::DATAFIELD_SOURCE_ID]->value = $source->getId();
+        return $entries[self::DATAFIELD_SOURCE_ID]->store();
+    }
+
+    function getSourceCourse()
+    {
+        require_once 'lib/classes/DataFieldEntry.class.php';
+
+        $entries = \DataFieldEntry::getDataFieldEntries($this->getId(), 'sem');
+
+        return isset($entries[self::DATAFIELD_SOURCE_ID])
+            ? $entries[self::DATAFIELD_SOURCE_ID]->value
+            : null;
+    }
+
+    function hasTodoList()
+    {
+        \ACC\initActiveRecord();
+        return \TodoList::findByOwner($this->getId(), 'copied_course', FALSE);
+    }
+
+    function getTodoList()
+    {
+        \ACC\initActiveRecord();
+        return \TodoList::findByOwner($this->getId(), 'copied_course');
+    }
+
+
+    function createTodoList()
+    {
+        \ACC\initActiveRecord();
+
+        $attributes = array(
+            'description' => "TODO Fehlende Beschreibung",
+            'owner_id'    => $this->getId(),
+            'owner_type'  => 'copied_course',
+        );
+
+        # TODO: Fehlerbehandlung?
+        $list = \TodoList::create($attributes);
+
+        $tasks = array();
+
+        $url = \URLHelper::getLink('dispatch.php/course/basicdata/view/82c9d90eecae0dc3d5b87965413c6a25');
+        $tasks[] = array(
+            "Dozenten/Tutoren",
+
+            'Beim Kopieren der Veranstaltung wurden nur die Dozenten aber nicht die Tutoren kopiert. '.
+            '&Uuml;berpr&uuml;fen Sie bitte, ob die Dozenten auch in der kopierten Veranstaltung unterrichten! '.
+            'Falls zutreffend erg&auml;nzen Sie die Veranstaltung um Tutoren! '.
+            'Die Personalverwaltung dieser Veranstaltung finden Sie unter <a href="' . $url . '">Grunddaten - Personal</a>.');
+
+
+        $tasks[] = array("R&auml;ume/Zeiten", "TODO");
+        $tasks[] = array("Anmeldeverfahren", "TODO");
+        $tasks[] = array("sichtbar schalten", "TODO");
+
+        $todo_list_id = $list->id;
+
+        foreach ($tasks as $task) {
+            list($short_description, $long_description) = $task;
+
+            $tmp = new \Task(compact('short_description',
+                                     'long_description',
+                                     'todo_list_id'),
+                             false);
+
+            # TODO: Fehlerbehandlung
+            $tmp->save($validate);
+        }
+    }
 }
