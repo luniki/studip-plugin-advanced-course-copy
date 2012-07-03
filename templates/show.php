@@ -39,7 +39,7 @@ PageLayout::addStylesheet($plugin->getPluginUrl() . '/css/style.css');
     </fieldset>
 
      <div class="button-group">
-        <?= \Studip\Button::createAccept() ?>
+        <?= \Studip\Button::createAccept(_("Kopieren")) ?>
         <?= \Studip\LinkButton::createCancel() ?>
     </div>
 </form>

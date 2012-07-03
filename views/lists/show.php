@@ -9,7 +9,7 @@ PageLayout::addScript($plugin->getPluginUrl() . '/js/yepnope.1.5.4-min.js');
   <ol id="todo-list" class="todo-list"></ol>
   <form action="#" method="post">
     <label>
-      <?= \Studip\Button::create(_("Liste löschen"), array('disabled' => 'disabled', 'class' => 'delete-todo-list')) ?>
+      <?= \Studip\Button::create(_("Liste löschen"), array('class' => 'delete-todo-list')) ?>
       Sobald Sie alle Punkte erledigt haben, können Sie diese Liste löschen.
     </label>
   </form>
@@ -34,6 +34,7 @@ STUDIP.ACC = {
                                            return $task->to_array();
                                        }, $list->tasks)) ?>
   , base_url: "<?= htmlReady("{$GLOBALS['ABSOLUTE_URI_STUDIP']}plugins.php/todo") ?>"
+  , user_role: "<?= $GLOBALS['auth']->auth['perm'] ?>"
 };
 
 yepnope({

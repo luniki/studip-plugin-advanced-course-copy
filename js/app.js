@@ -118,8 +118,7 @@
     TodoListView.prototype.initialize = function(options) {
       this.list = options.list;
       this.list.on('add:tasks', this.addOne);
-      this.list.on('reset:tasks', this.addAll);
-      return this.list.get('tasks').on('change', this.checkRemaining);
+      return this.list.on('reset:tasks', this.addAll);
     };
 
     TodoListView.prototype.render = function() {
@@ -135,8 +134,7 @@
     };
 
     TodoListView.prototype.addAll = function(tasks_collection) {
-      _.each(tasks_collection.models, this.addOne);
-      return this.checkRemaining(_.first(tasks_collection.models));
+      return _.each(tasks_collection.models, this.addOne);
     };
 
     TodoListView.prototype.checkRemaining = function(task) {
@@ -150,13 +148,27 @@
     };
 
     TodoListView.prototype.deleteList = function(event) {
-      this.$("button").attr("disabled", "disabled").wrapInner("<span/>").children();
-      /*
-          xhr = @list.destroy()
-          xhr?.done ->
-            console.log "TODO:ERROR" unless match = window.location.search.match(/cid=(\w+)/)
-            window.location.href = STUDIP.ABSOLUTE_URI_STUDIP + "seminar_main.php?cid=" + match[1]
-      */
+      var xhr;
+      this.$("button").attr("disabled", "disabled").wrapInner("<span/>").children().showAjaxNotification();
+      xhr = this.list.destroy();
+      if (xhr != null) {
+        xhr.done(function() {
+          var match, url;
+          match = window.location.search.match(/cid=(\w+)/);
+          if (!match) console.log("TODO:ERROR");
+          url = (function() {
+            switch (STUDIP.ACC.user_role) {
+              case "root":
+              case "admin":
+                return "dispatch.php/course/basicdata/view/";
+              default:
+                return "dispatch.php/course/management";
+            }
+          })();
+          url += "?cid=" + match[1];
+          return window.location.href = STUDIP.ABSOLUTE_URI_STUDIP + url;
+        });
+      }
       return false;
     };
 

@@ -94,7 +94,8 @@ class TodoListView extends Backbone.View
     @list = options.list
     @list.on 'add:tasks',     @addOne
     @list.on 'reset:tasks',   @addAll
-    @list.get('tasks').on 'change', @checkRemaining
+    # disabled by follerma
+    # @list.get('tasks').on 'change', @checkRemaining
 
   render: ->
     @
@@ -105,7 +106,8 @@ class TodoListView extends Backbone.View
 
   addAll: (tasks_collection) =>
     _.each tasks_collection.models, @addOne
-    @checkRemaining _.first tasks_collection.models
+    # disabled by follerma
+    # @checkRemaining _.first tasks_collection.models
 
   checkRemaining: (task) =>
     done = task.collection?.remaining().length is 0
@@ -116,13 +118,21 @@ class TodoListView extends Backbone.View
 
 
   deleteList: (event) =>
-    @$("button").attr("disabled", "disabled").wrapInner("<span/>").children()#.showAjaxNotification()
-    ###
+    @$("button").attr("disabled", "disabled").wrapInner("<span/>").children().showAjaxNotification()
     xhr = @list.destroy()
     xhr?.done ->
-      console.log "TODO:ERROR" unless match = window.location.search.match(/cid=(\w+)/)
-      window.location.href = STUDIP.ABSOLUTE_URI_STUDIP + "seminar_main.php?cid=" + match[1]
-    ###
+
+      match = window.location.search.match(/cid=(\w+)/)
+
+      console.log "TODO:ERROR" unless match
+
+      url = switch STUDIP.ACC.user_role
+        when "root", "admin"
+          "dispatch.php/course/basicdata/view/"
+        else
+          "dispatch.php/course/management"
+      url += "?cid=#{match[1]}"
+      window.location.href = STUDIP.ABSOLUTE_URI_STUDIP + url
     off
 
 todo_list = new TodoList STUDIP.ACC.initial_todo_list
