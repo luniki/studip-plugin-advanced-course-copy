@@ -1,4 +1,25 @@
 <?php
+
+# Copyright (c)  2012 <mlunzena@uos.de>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 namespace ACC;
 
 const GENERAL_FILES     = "general_files";
@@ -34,7 +55,6 @@ class CourseCopier
         $this->copyDatafields($copy);
         $this->copyPluginActivations($copy);
 
-        # TODO what to do?
         $this->copyLecturers($copy);
 
         $this->setupModules($copy);
@@ -100,7 +120,6 @@ class CourseCopier
         $copy->admission_enable_quota = 0;
     }
 
-
     function setSemester($copy, $semester_id)
     {
         # start
@@ -114,7 +133,6 @@ class CourseCopier
         $copy->metadate->setSeminarDurationTime($copy->semester_duration_time);
         $copy->metadate->seminar_id = $copy->getId();
     }
-
 
     function storeCopy($copy)
     {
@@ -144,8 +162,6 @@ class CourseCopier
     {
 
         $db = \DBManager::get();
-
-#        Seminar_id, user_id, status, position, gruppe, admission_studiengang_id, notification, mkdate, comment, visible, label, bind_calendar
 
         $query =
             "INSERT INTO seminar_user ".
@@ -203,7 +219,6 @@ class CourseCopier
 
     function copyInstitutes($copy)
     {
-
         $db = \DBManager::get();
 
         $query =
@@ -216,7 +231,6 @@ class CourseCopier
             $stmt->execute(array($copy->getId(),
                                  $this->source->getId()));
     }
-
 
     function copyDatafields($copy)
     {
@@ -245,7 +259,6 @@ class CourseCopier
         }
     }
 
-
     function copyFiles($copy, $modules)
     {
         if (!$this->shouldCopyModule($modules, GENERAL_FILES)) {
@@ -270,11 +283,9 @@ class CourseCopier
             return;
         }
 
+        # copy it as a general top folder
         foreach ($this->source->getAppointmentFolders(FALSE) as $folder) {
-
-            # copy it as a general top folder
             $md5 = md5($copy->getId() . 'top_folder');
-
             $this->copyFolder($copy, $folder['folder_id'], $md5);
         }
     }
@@ -305,15 +316,10 @@ class CourseCopier
 
     }
 
-
     function copyFolder($copy, $folder_id, $target_id)
     {
-        $done = copy_item($folder_id, $target_id, $copy->getId());
-        if (!$done) {
-            # TODO hier und generell
-        }
+        copy_item($folder_id, $target_id, $copy->getId());
     }
-
 
     function copyStatusGroups($copy, $modules)
     {
@@ -461,33 +467,5 @@ class CourseCopier
                     get_fullname($auth->auth["uid"]),
                     _("Hier ist Raum für allgemeine Diskussionen"),
                     0, 0, $copy->getId());
-    }
-
-
-    static function createDataFieldStructures()
-    {
-        require_once 'lib/classes/DataFieldStructure.class.php';
-
-        $structures = array(
-            \ACC\Course::DATAFIELD_SOURCE_ID => 'ID of original course'
-        );
-
-
-        foreach ($structures as $id => $name) {
-
-            $dfs = new DataFieldStructure(
-                array(
-                    'datafield_id' => $id,
-                    'name'         => $name,
-                    'object_type'  => 'sem',
-                    'edit_perms'   => 'root',
-                    'view_perms'   => 'all',
-                    'priority'     => '0',
-                    'type'         => 'textline',
-                    'typeparam'    => ''
-                ));
-
-            $dfs->store();
-        }
     }
 }

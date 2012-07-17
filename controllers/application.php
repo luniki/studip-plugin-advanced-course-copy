@@ -21,8 +21,6 @@
 # SOFTWARE.
 
 require_once "app/controllers/studip_controller.php";
-require_once dirname(dirname(__FILE__)) . "/vendor/php-activerecord/ActiveRecord.php";
-
 require_once dirname(dirname(__FILE__)) . "/phpar.php";
 
 abstract class ApplicationController extends StudipController
@@ -30,11 +28,8 @@ abstract class ApplicationController extends StudipController
     function before_filter(&$action, &$args)
     {
         parent::before_filter($action, $args);
-
         $this->flash = Trails_Flash::instance();
-
         $this->plugin = $this->dispatcher->plugin;
-
         \ACC\initActiveRecord();
     }
 
@@ -42,11 +37,6 @@ abstract class ApplicationController extends StudipController
     {
         $this->set_content_type('application/json;charset=utf-8');
         $this->render_text(json_encode($data));
-    }
-
-    function does_not_understand($action, $args)
-    {
-        var_dump(__METHOD__, func_get_args());exit;
     }
 
     function url_for($to)
@@ -66,64 +56,14 @@ abstract class ApplicationController extends StudipController
         return PluginEngine::getURL($this->dispatcher->plugin, $params, join('/', $args));
     }
 
-
-    protected static function require_allowed_method($allowed)
-    {
-        if (!isset($allowed)) {
-            $allowed = array('DELETE', 'GET', 'POST', 'PUT');
-        }
-
-        if (!in_array(self::get_method(), func_get_args())) {
-            throw new Trails_Exception(405);
-        }
-    }
-
-    protected static function map_method_to_action()
-    {
-        $lookup = array(
-            'DELETE' => 'destroy',
-            'GET'    => 'show',
-            'POST'   => 'create',
-            'PUT'    => 'update'
-        );
-
-
-        return $lookup[self::get_method()];
-    }
-
-
-    protected static function is_method_allowed($method)
-    {
-        return preg_match('/DELETE|GET|POST|PUT/A', $method);
-    }
-
-    protected static function get_method()
-    {
-
-        $method = Request::method();
-        $piggy = strtoupper(Request::get('_method'));
-
-        if (Request::isAjax()
-            && 'POST' === $method
-            && self::is_method_allowed($piggy)) {
-            $method = $piggy;
-        }
-
-        return $method;
-    }
-
-
-
     function setBaseLayout()
     {
         global $template_factory;
         $this->set_layout($template_factory->open("layouts/base_without_infobox"));
     }
 
-
     function parseRequestBody()
     {
-
         if ($this->format === 'json') {
         $body = file_get_contents('php://input');
             $decoded = json_decode($body, true);

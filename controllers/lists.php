@@ -51,10 +51,8 @@ class ListsController extends ApplicationController
         return $this->must_authorize($action);
     }
 
-
     private function must_authorize($action)
     {
-
         if ($this->list->owner_type == 'copied_course') {
             if ($this->course_permission('dozent')) {
                 return TRUE;
@@ -92,10 +90,12 @@ class ListsController extends ApplicationController
 
     function new_action()
     {
+        # see template
     }
 
     function edit_action($list_id)
     {
+        # see template
     }
 
     function create_action()
@@ -106,7 +106,7 @@ class ListsController extends ApplicationController
             $this->redirect('lists/show/' . $list->id);
         }
         else {
-            # TODO
+            throw new Trails_Exception(500);
         }
     }
 
@@ -119,7 +119,7 @@ class ListsController extends ApplicationController
             $this->redirect('lists/show/' . $this->list->id);
         }
         else {
-            # TODO
+            throw new Trails_Exception(500);
         }
     }
 
@@ -135,7 +135,6 @@ class ListsController extends ApplicationController
             }
         }
         else {
-            # TODO
             throw new Trails_Exception(500);
         }
     }
@@ -166,7 +165,6 @@ class ListsController extends ApplicationController
      */
     function rescue($exception)
     {
-        # TODO do this the right way (which is?)
         if ($exception instanceof ActiveRecord\RecordNotFound) {
             return $this->dispatcher->trails_error(new Trails_Exception(404));
         } else {

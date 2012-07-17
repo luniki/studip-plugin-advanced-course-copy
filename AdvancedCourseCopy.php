@@ -19,6 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+
 require 'ACCCourse.php';
 require 'CourseCopier.php';
 
@@ -35,6 +36,7 @@ class DynamicURLNavigation extends Navigation
     }
 }
 
+
 class ContextualNavigation extends Navigation
 {
 
@@ -49,12 +51,12 @@ class ContextualNavigation extends Navigation
     }
 }
 
+
 class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 {
     function __construct()
     {
         parent::__construct();
-
         $this->setupNavigation();
     }
 
@@ -96,7 +98,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
         }
     }
 
-
     function createWhatsNext()
     {
         $nav = new ContextualNavigation('What\'s next?');
@@ -125,18 +126,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
         }
     }
 
-    function isCopiedContext()
-    {
-        $context = $this->getContext();
-        if ($context) {
-            $course = new \ACC\Course($context);
-            if ($course->getSourceCourse()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     function requireContext()
     {
         $context = $this->getContext();
@@ -147,12 +136,12 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
             }
             //Auswähler für Admin-Bereich:
             else {
+                # TODO: in eigene Methode auslagern
                 PageLayout::setTitle(_("Kopieren von Veranstaltungen"));
                 $this->activateNavigation();
                 $GLOBALS['view_mode'] = "sem";
                 $GLOBALS['i_page'] = "copy_assi.php";
                 $_REQUEST['list'] = TRUE;
-
 
                 require_once 'lib/admin_search.inc.php';
                 include 'lib/include/html_head.inc.php';
@@ -200,7 +189,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
         }
     }
 
-
     function authorize($course)
     {
         global $perm, $SessSemName;
@@ -211,7 +199,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
     function show_action()
     {
-
         $course = $this->requireContext();
         $this->authorize($course);
 
@@ -242,7 +229,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
                               $this->getBaseLayout());
     }
 
-
     function copy_action()
     {
         $course = $this->requireContext();
@@ -250,7 +236,6 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
         $plugin = $this;
 
-        # TODO semester checken
         $semester = Request::option("semester");
         $modules = Request::getArray("modules");
 
@@ -259,16 +244,18 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
         $_SESSION['plugin-acc-flash'] = array("success" => TRUE);
 
-        header('Location: ' . PluginEngine::getURL($this, array('cid' => $copy->getId()), 'whatsnext'));
+        $url = PluginEngine::getURL($this,
+                                    array('cid' => $copy->getId()),
+                                    'whatsnext');
+        header('Location: ' . $url);
     }
-
 
     function whatsnext_action()
     {
-
         $course = $this->requireContext();
         $this->authorize($course);
 
+        # get flash if existent
         $flash = @$_SESSION['plugin-acc-flash'];
         unset($_SESSION['plugin-acc-flash']);
 

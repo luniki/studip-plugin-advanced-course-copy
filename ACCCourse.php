@@ -1,11 +1,30 @@
 <?
+# Copyright (c)  2012 <mlunzena@uos.de>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 namespace ACC;
 
 require_once 'phpar.php';
 
 class Course extends \Seminar
 {
-
 
     function toXML()
     {
@@ -110,7 +129,6 @@ class Course extends \Seminar
         return $this->getFolders(array_keys($appointments), $recursive);
     }
 
-
     function getGroups()
     {
         $db = \DBManager::get();
@@ -124,8 +142,6 @@ class Course extends \Seminar
         $groups = $this->getGroups($this->getId());
         return $this->getFolders(array_keys($groups), $recursive);
     }
-
-
 
     function getLiterature()
     {
@@ -209,7 +225,6 @@ class Course extends \Seminar
         return \TodoList::findByOwner($this->getId(), 'copied_course');
     }
 
-
     function createTodoList()
     {
         \ACC\initActiveRecord();
@@ -233,7 +248,6 @@ class Course extends \Seminar
             '&Uuml;berpr&uuml;fen Sie bitte, ob die Dozenten auch in der kopierten Veranstaltung unterrichten! '.
             'Falls zutreffend erg&auml;nzen Sie die Veranstaltung um Tutoren! '.
             'Die Personalverwaltung dieser Veranstaltung finden Sie unter <a href="' . $url . '">Grunddaten - Personal</a>.');
-
 
         $tasks[] = array("R&auml;ume/Zeiten", "TODO");
         $tasks[] = array("Anmeldeverfahren", "TODO");

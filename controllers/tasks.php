@@ -62,13 +62,13 @@ class TasksController extends ApplicationController
 
     function new_action()
     {
+        # see template
     }
 
     function edit_action($task_id)
     {
         $this->task = Task::find($task_id);
     }
-
 
     function create_action()
     {
@@ -86,33 +86,26 @@ class TasksController extends ApplicationController
             $this->redirect('lists/' . $this->list->id . '/tasks/show/' . $task->id . $format);
         }
         else {
-            # TODO
+            throw new Trails_Exception(500);
         }
     }
 
-     function update_action($task_id)
-     {
-         $attributes = $this->parseRequestBody();
-         $task = Task::find($task_id);
-         $status = $task->update_attributes($attributes);
+    function update_action($task_id)
+    {
+        $attributes = $this->parseRequestBody();
+        $task = Task::find($task_id);
+        $status = $task->update_attributes($attributes);
 
-         if ($this->respond_to('json')) {
-             if ($status) {
-                 $this->render_json($task->to_array());
-             }
-             else {
-                 throw new Trails_Exception(400);
-             }
-         }
-         else {
-             throw new Trails_Exception(500);
-         }
-     }
-
-     /*
-     function destroy_action($task_id)
-     {
-         $this->render_text(__METHOD__);
-     }
-     */
+        if ($this->respond_to('json')) {
+            if ($status) {
+                $this->render_json($task->to_array());
+            }
+            else {
+                throw new Trails_Exception(400);
+            }
+        }
+        else {
+            # TODO responding with something other than json
+        }
+    }
 }
