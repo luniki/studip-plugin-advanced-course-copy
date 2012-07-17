@@ -1,6 +1,6 @@
 <?php
 
-class CreateTodoListTable extends DBMigration {
+class CreateTaskTable extends DBMigration {
 
   function up() {
     $sql = <<<SQL

@@ -20,8 +20,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-require 'ACCCourse.php';
-require 'CourseCopier.php';
+require_once 'ACCCourse.php';
+require_once 'CourseCopier.php';
 
 class DynamicURLNavigation extends Navigation
 {
@@ -273,5 +273,31 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
         echo $factory->render("whatsnext",
                               compact(words("course plugin list flash")),
                               $this->getBaseLayout());
+    }
+
+    /**
+     * Callback function called after enabling a plugin.
+     * The plugin's ID is transmitted for convenience.
+     *
+     * @param $pluginId string The ID of the plugin just enabled.
+     */
+    public static function onEnable($pluginId)
+    {
+        $pm = PluginManager::getInstance();
+        $id = $pm->getPlugin('Todo');
+        $pm->setPluginEnabled($id, TRUE);
+    }
+
+    /**
+     * Callback function called after disabling a plugin.
+     * The plugin's ID is transmitted for convenience.
+     *
+     * @param $pluginId string The ID of the plugin just disabled.
+     */
+    public static function onDisable($pluginId)
+    {
+        $pm = PluginManager::getInstance();
+        $id = $pm->getPlugin('Todo');
+        $pm->setPluginEnabled($id, FALSE);
     }
 }

@@ -37,7 +37,7 @@ class CreateSourceCourseDataField extends DBMigration {
         }
     }
 
-    static function destroyDataFieldStructure()
+    static function destroyDataFieldStructures()
     {
         require_once 'lib/classes/DataFieldStructure.class.php';
         require_once dirname(dirname(__FILE__)) . '/ACCCourse.php';
