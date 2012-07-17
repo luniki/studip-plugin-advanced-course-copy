@@ -1,4 +1,4 @@
-#plugin-acc label {
+#plugin-acc-copy label {
   display: block;
 }
 
@@ -34,7 +34,7 @@ form.plugin-acc-copy .button-group {
 
 
 #todoapp form {
-  padding: 40px;
+  padding: 10px 40px;
 }
 
 .todo-list {
@@ -46,12 +46,12 @@ form.plugin-acc-copy .button-group {
   line-height: 1.1em;
   border-bottom: 1px solid #cccccc;
   list-style: none;
-  font-size: 24px;
+  font-size: 16px;
 }
 
 .todo-list .check {
   position: relative;
-  top: 9px;
+  top: 4px;
   margin: 0 10px 0 7px;
   float: left;
 }
@@ -70,19 +70,13 @@ form.plugin-acc-copy .button-group {
   content: " ";
   position: absolute;
   cursor: pointer;
-  top: 20px;
+  top: 14px;
   left: 0px;
   width: 16px;
   height: 16px;
   background: url("../../../../assets/images/ajax_indicator_small.gif") no-repeat 0 0;
   opacity: 0.25;
 }
-
-/*
-.todo-list .saving .check {
-  visibility: hidden;
-}
-*/
 
 /* switch long content */
 

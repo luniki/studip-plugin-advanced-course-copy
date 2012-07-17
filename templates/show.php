@@ -1,5 +1,5 @@
 <?
-$body_id = "plugin-acc";
+$body_id = "plugin-acc-copy";
 
 PageLayout::addStylesheet($plugin->getPluginUrl() . '/css/style.css');
 ?>
@@ -23,32 +23,30 @@ PageLayout::addStylesheet($plugin->getPluginUrl() . '/css/style.css');
     </fieldset>
     <fieldset>
 
-<legend>Welche Inhalte sollen in die neue Veranstaltung übernommen werden?</legend>
+      <legend>
+          <?= _("Welche Inhalte sollen in die neue Veranstaltung übernommen werden?") ?>
+      </legend>
+
       <? foreach ($modules as $module) { ?>
-
-      <label>
-        <input type="checkbox"
-               checked
-               name="modules[<?= $module['name'] ?>]"
-               value="on">
-        <?= htmlReady($module['label']) ?>
-      </label>
-
+          <label>
+            <input type="checkbox"
+                   checked
+                   name="modules[<?= $module['name'] ?>]"
+                   value="on">
+            <?= htmlReady($module['label']) ?>
+          </label>
       <? } ?>
 
     </fieldset>
 
      <div class="button-group">
         <?= \Studip\Button::createAccept(_("Kopieren")) ?>
-        <?= \Studip\LinkButton::createCancel() ?>
     </div>
 </form>
 
-<style>
-</style>
 <?
 
-$text = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enimad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+$text = _("Auf dieser Seite können Sie eine Veranstaltung in ein anderes Semester kopieren. Dabei werden &ndash; falls gewünscht &ndash; auch weitere Daten aus der Ursprungsveranstaltung kopiert.");
 
 $infobox = array(
     'picture' => 'infobox/schedules.jpg',

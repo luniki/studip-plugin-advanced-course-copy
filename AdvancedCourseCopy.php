@@ -22,7 +22,20 @@
 require 'ACCCourse.php';
 require 'CourseCopier.php';
 
-class ACCNavigation extends Navigation
+class DynamicURLNavigation extends Navigation
+{
+
+    function getURL()
+    {
+        if (is_callable($this->url)) {
+            $callable = $this->url;
+            $this->url = $callable();
+        }
+        return parent::getURL();
+    }
+}
+
+class ContextualNavigation extends Navigation
 {
 
     function isVisible($needs_image = false)
@@ -33,17 +46,6 @@ class ACCNavigation extends Navigation
         }
 
         return parent::isVisible($needs_image);
-    }
-
-    function setDescription($lazyDescription)
-    {
-        $this->lazyDescription = $lazyDescription;
-    }
-
-    function getDescription()
-    {
-        $callable = $this->lazyDescription;
-        return $callable();
     }
 }
 
@@ -58,13 +60,12 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
     function setupNavigation()
     {
-        # require context for anything
-        if (!($context = $this->getContext())) {
-            return;
+        $context = $this->getContext();
+        if ($context) {
+            $this->setupWhatsNextNavigation($context);
         }
 
-        $this->setupWhatsNextNavigation($context);
-        $this->setupCopyCourseNavigation($context);
+        $this->setupCopyCourseNavigation();
     }
 
     function setupWhatsNextNavigation($context)
@@ -98,22 +99,21 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
     function createWhatsNext()
     {
-        $nav = new ACCNavigation('What\'s next?');
+        $nav = new ContextualNavigation('What\'s next?');
         $nav->setURL(PluginEngine::getURL($this, array(), 'whatsnext'));
-        $nav->setDescription(
-            function () {
-                    return "Ergänzen Sie Ihre gerade kopierte Veranstaltung noch um die 4 offenen Punkte.";
-            }
-        );
+        $nav->setDescription(_("Ihre gerade kopierte Veranstaltung muss noch um Daten ergänzt werden, die nicht kopiert werden konnten."));
         return $nav;
     }
 
-    function setupCopyCourseNavigation($context)
+    function setupCopyCourseNavigation()
     {
         # replace course copy links
+        $plugin = $this;
 
-        $course_nav = new Navigation('Veranstaltung kopieren (+)');
-        $course_nav->setURL(PluginEngine::getURL($this));
+        $course_nav = new DynamicURLNavigation('Veranstaltung kopieren (+)');
+        $course_nav->setURL(function () use ($plugin) {
+                return PluginEngine::getURL($plugin, array("list" => "TRUE"));
+            });
         $course_nav->setImage('icons/16/black/add/seminar.png" class="plugin-acc-copy');
 
         if (Navigation::hasItem('/admin/course')) {
@@ -141,8 +141,32 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
     {
         $context = $this->getContext();
         if (!$context) {
-            header("HTTP/1.1 400 Bad Request", TRUE, 400);
-            throw new Exception("Bad Request");
+            if (!$GLOBALS['perm']->have_perm("admin")) {
+                header("HTTP/1.1 400 Bad Request", TRUE, 400);
+                throw new Exception("Bad Request");
+            }
+            //Auswähler für Admin-Bereich:
+            else {
+                PageLayout::setTitle(_("Kopieren von Veranstaltungen"));
+                $this->activateNavigation();
+                $GLOBALS['view_mode'] = "sem";
+                $GLOBALS['i_page'] = "copy_assi.php";
+                $_REQUEST['list'] = TRUE;
+
+
+                require_once 'lib/admin_search.inc.php';
+                include 'lib/include/html_head.inc.php';
+                include 'lib/include/header.php';
+                ob_start();
+                $url = htmlReady(PluginEngine::getURL($this));
+                register_shutdown_function(function () use ($url) {
+                        $content = ob_get_clean();
+                        $content = preg_replace('/href="[^"]*do_copy[^"]*=([0-9a-f]{32})[^"]*"/', 'href="' . $url . '?cid=$1"', $content);
+                        echo $content;
+                    });
+                include 'lib/include/admin_search_form.inc.php';
+                exit;
+            }
         }
 
         return new \ACC\Course($context);
@@ -233,6 +257,8 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
         $copier = new \ACC\CourseCopier($course->getId());
         $copy = $copier->copy($semester, $modules);
 
+        $_SESSION['plugin-acc-flash'] = array("success" => TRUE);
+
         header('Location: ' . PluginEngine::getURL($this, array('cid' => $copy->getId()), 'whatsnext'));
     }
 
@@ -242,6 +268,9 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
         $course = $this->requireContext();
         $this->authorize($course);
+
+        $flash = @$_SESSION['plugin-acc-flash'];
+        unset($_SESSION['plugin-acc-flash']);
 
         if (Navigation::hasItem('/course/admin/whatsnext')) {
             Navigation::activateItem('/course/admin/whatsnext');
@@ -255,7 +284,7 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
         $factory = $this->getTemplateFactory();
         echo $factory->render("whatsnext",
-                              compact(words("course plugin list")),
+                              compact(words("course plugin list flash")),
                               $this->getBaseLayout());
     }
 }

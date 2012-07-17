@@ -5,13 +5,10 @@ PageLayout::addScript($plugin->getPluginUrl() . '/js/yepnope.1.5.4-min.js');
 ?>
 
 <div id="todoapp">
-  <h1><?= htmlReady($list->description) ?></h1>
+  <h3><?= htmlReady($list->description) ?></h3>
   <ol id="todo-list" class="todo-list"></ol>
   <form action="#" method="post">
-    <label>
-      <?= \Studip\Button::create(_("Liste löschen"), array('class' => 'delete-todo-list')) ?>
-      Sobald Sie alle Punkte erledigt haben, können Sie diese Liste löschen.
-    </label>
+    <?= \Studip\Button::create(_("Liste löschen"), array('class' => 'delete-todo-list')) ?>
   </form>
 </div>
 

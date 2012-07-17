@@ -215,7 +215,7 @@ class Course extends \Seminar
         \ACC\initActiveRecord();
 
         $attributes = array(
-            'description' => "TODO Fehlende Beschreibung",
+            'description' => "Was ist noch zu tun?",
             'owner_id'    => $this->getId(),
             'owner_type'  => 'copied_course',
         );

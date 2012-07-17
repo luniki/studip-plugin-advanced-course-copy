@@ -1,17 +1,8 @@
-<? ob_start() ?>
-  <?= _("Diese Veranstaltung ist eine Kopie von einer") ?>
-  <a href="<?= URLHelper::getLink('seminar_main.php', array('cid' => $course->getSourceCourse())) ?>">
-    <?= _("anderen Veranstaltung") ?>.
-  </a>
+<? $body_id = "plugin-acc-whatsnext"; ?>
 
-  <p>
-    <?= _("Bestimmte Daten – wie zum Beispiel Räume/Zeiten – konnten nicht sinnvoll kopiert werden.") ?>
-  </p>
-
-  <p>
-    <?= _("Überprüfen Sie abschließend, ob Ihre Veranstaltung noch um die nebenstehenden Punkte ergänzen werden müssen.") ?>
-  </p>
-<? $text = ob_get_clean() ?>
+<? if ($flash['success']) { ?>
+  <?= MessageBox::success(_("Veranstaltung erfolgreich kopiert.")) ?>
+<? } ?>
 
 <? if ($list) {
       $factory = new Flexi_TemplateFactory(dirname(__FILE__) . "/../views/");
@@ -23,10 +14,27 @@
 
 <? } ?>
 
+<? ob_start() ?>
+  <?= _("Diese Veranstaltung ist eine Kopie einer") ?>
+  <a href="<?= URLHelper::getLink('seminar_main.php', array('cid' => $course->getSourceCourse())) ?>">
+    <?= _("anderen Veranstaltung") ?>.
+  </a>
+
+  <p>
+    <?= _("Bestimmte Daten - wie zum Beispiel Räume/Zeiten - konnten nicht sinnvoll kopiert werden.") ?>
+  </p>
+
+  <p>
+    <?= _("Überprüfen Sie abschließend, ob Ihre Veranstaltung noch um die nebenstehenden Punkte ergänzt werden muss.") ?>
+  </p>
+
+  <?= _("Sie können die nebenstehende Todo-Liste zur persönlichen Fortschrittskontrolle verwenden.") ?>
+
+<? $text = ob_get_clean() ?>
+
 <?
 $infobox = array(
     'picture' => 'infobox/schedules.jpg',
-
     'content' => array(
         array(
             'kategorie' => _("Information:"),
