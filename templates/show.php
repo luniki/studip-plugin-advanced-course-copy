@@ -1,6 +1,6 @@
 <?
 $body_id = "plugin-acc-copy";
-
+PageLayout::setTitle(_("Veranstaltung kopieren"));
 PageLayout::addStylesheet($plugin->getPluginUrl() . '/css/style.css');
 ?>
 

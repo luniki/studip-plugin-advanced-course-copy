@@ -9,5 +9,3 @@
   </li>
   <? } ?>
 </ol>
-
-<? var_dump($lists); ?>

@@ -100,7 +100,7 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
 
     function createWhatsNext()
     {
-        $nav = new ContextualNavigation('What\'s next?');
+        $nav = new ContextualNavigation('Zu erledigen');
         $nav->setURL(PluginEngine::getURL($this, array(), 'whatsnext'));
         $nav->setDescription(_("Ihre gerade kopierte Veranstaltung muss noch um Daten ergänzt werden, die nicht kopiert werden konnten."));
         return $nav;
@@ -134,31 +134,50 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
                 header("HTTP/1.1 400 Bad Request", TRUE, 400);
                 throw new Exception("Bad Request");
             }
-            //Auswähler für Admin-Bereich:
             else {
-                # TODO: in eigene Methode auslagern
-                PageLayout::setTitle(_("Kopieren von Veranstaltungen"));
-                $this->activateNavigation();
-                $GLOBALS['view_mode'] = "sem";
-                $GLOBALS['i_page'] = "copy_assi.php";
-                $_REQUEST['list'] = TRUE;
-
-                require_once 'lib/admin_search.inc.php';
-                include 'lib/include/html_head.inc.php';
-                include 'lib/include/header.php';
-                ob_start();
-                $url = htmlReady(PluginEngine::getURL($this));
-                register_shutdown_function(function () use ($url) {
-                        $content = ob_get_clean();
-                        $content = preg_replace('/href="[^"]*do_copy[^"]*=([0-9a-f]{32})[^"]*"/', 'href="' . $url . '?cid=$1"', $content);
-                        echo $content;
-                    });
-                include 'lib/include/admin_search_form.inc.php';
+                //Auswähler für Admin-Bereich
+                $this->showAdminSearchForm();
                 exit;
             }
         }
 
         return new \ACC\Course($context);
+    }
+
+
+    function showAdminSearchForm()
+    {
+        PageLayout::setTitle(_("Kopieren von Veranstaltungen"));
+        $this->activateNavigation();
+
+        # prepare layout
+
+        $GLOBALS['view_mode'] = "sem";
+        $GLOBALS['i_page'] = "copy_assi.php";
+        $_REQUEST['list'] = TRUE;
+
+        require_once 'lib/admin_search.inc.php';
+        include 'lib/include/html_head.inc.php';
+        include 'lib/include/header.php';
+
+        # start capturing admin search form
+        ob_start();
+
+        # prepare rewriting output in the last possible moment
+        $url = htmlReady(PluginEngine::getURL($this));
+        register_shutdown_function(
+            function () use ($url) {
+                $content = ob_get_clean();
+                $content = preg_replace('/href="[^"]*do_copy[^"]*=([0-9a-f]{32})[^"]*"/',
+                                        'href="' . $url . '?cid=$1"',
+                                        $content);
+                echo $content;
+            });
+
+        # start output - it will never return
+        include 'lib/include/admin_search_form.inc.php';
+
+        # this line will never be reached
     }
 
     function getContext()
@@ -284,9 +303,16 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
     public static function onEnable($pluginId)
     {
         $pm = PluginManager::getInstance();
-        $id = $pm->getPlugin('Todo');
-        $pm->setPluginEnabled($id, TRUE);
+        $plugin_info = $pm->getPluginInfo('Todo');
+        $todo_id = $plugin_info['id'];
+        $pm->setPluginEnabled($todo_id, TRUE);
+
+        # prevent disabling again in the trails controller
+        $r = Request::getInstance();
+        $r['enabled_'.$todo_id] = "1";
     }
+
+
 
     /**
      * Callback function called after disabling a plugin.
@@ -297,7 +323,12 @@ class AdvancedCourseCopy extends StudipPlugin implements SystemPlugin
     public static function onDisable($pluginId)
     {
         $pm = PluginManager::getInstance();
-        $id = $pm->getPlugin('Todo');
+        $plugin_info = $pm->getPluginInfo('Todo');
+        $id = $plugin_info['id'];
         $pm->setPluginEnabled($id, FALSE);
+
+        # prevent enabling again in the trails controller
+        $r = Request::getInstance();
+        $r['enabled_'.$id] = "0";
     }
 }

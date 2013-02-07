@@ -462,7 +462,7 @@ class CourseCopier
     function createDefaultTopic($copy)
     {
         global $auth;
-
+        require 'lib/forum.inc.php';
         CreateTopic(_("Allgemeine Diskussionen"),
                     get_fullname($auth->auth["uid"]),
                     _("Hier ist Raum für allgemeine Diskussionen"),

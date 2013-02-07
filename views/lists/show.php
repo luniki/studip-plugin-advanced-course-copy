@@ -35,13 +35,18 @@ STUDIP.ACC = {
 };
 
 yepnope({
-    test: typeof JSON === "undefined",
-    yep: "<?= $plugin->getPluginUrl() . '/js/json2.min.js' ?>"
+    test: window.JSON,
+    nope: "<?= $plugin->getPluginUrl() . '/js/json2.min.js' ?>"
 });
 
 yepnope({
-  test: typeof Backbone === "undefined",
-  yep: "<?= $plugin->getPluginUrl() . '/js/backbone.js' ?>",
+    test: window._ && _.VERSION && parseFloat(_.VERSION) >= 1.3,
+    nope: "<?= $plugin->getPluginUrl() . '/js/underscore.js' ?>"
+});
+
+yepnope({
+  test: window.Backbone,
+  nope: "<?= $plugin->getPluginUrl() . '/js/backbone.js' ?>",
   complete:
         function () {
             yepnope([

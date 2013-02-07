@@ -235,23 +235,46 @@ class Course extends \Seminar
             'owner_type'  => 'copied_course',
         );
 
-        # TODO: Fehlerbehandlung?
         $list = \TodoList::create($attributes);
 
         $tasks = array();
 
-        $url = \URLHelper::getLink('dispatch.php/course/basicdata/view/82c9d90eecae0dc3d5b87965413c6a25');
+        $url = \URLHelper::getLink('dispatch.php/course/basicdata/view/' .  $this->getId());
         $tasks[] = array(
             "Dozenten/Tutoren",
 
             'Beim Kopieren der Veranstaltung wurden nur die Dozenten aber nicht die Tutoren kopiert. '.
-            '&Uuml;berpr&uuml;fen Sie bitte, ob die Dozenten auch in der kopierten Veranstaltung unterrichten! '.
-            'Falls zutreffend erg&auml;nzen Sie die Veranstaltung um Tutoren! '.
+            'Überprüfen Sie bitte, ob die Dozenten auch in der kopierten Veranstaltung unterrichten! '.
+            'Falls zutreffend ergänzen Sie die Veranstaltung um Tutoren! '.
             'Die Personalverwaltung dieser Veranstaltung finden Sie unter <a href="' . $url . '">Grunddaten - Personal</a>.');
 
-        $tasks[] = array("R&auml;ume/Zeiten", "TODO");
-        $tasks[] = array("Anmeldeverfahren", "TODO");
-        $tasks[] = array("sichtbar schalten", "TODO");
+
+        $url = \URLHelper::getLink("raumzeit.php", array('cid' => $this->getId()));
+        $tasks[] = array(
+            "Zeiten/Räume",
+
+            'Die Zeiten und Räume der ursprünglichen Veranstaltung ändern sich häufig von Semester zu Semester. '.
+            'Aus diesem Grund wurden diese Angaben nicht kopiert. '.
+            'Ergänzen Sie bitte die richtigen Zeiten und Räume auf der <a href="' . $url . '">Zeiten/Räume-Seite!</a>');
+
+
+        $url = \URLHelper::getLink("admin_admission.php", array('cid' => $this->getId()));
+        $tasks[] = array(
+            "Zugangsberechtigungen",
+
+            'Wenn die ursprüngliche Veranstaltung Anmeldeverfahren oder andere Zugangsberechtigungen enthielt, wurden diese nicht mitkopiert. '.
+            'Sie können für die kopierte Veranstaltung Anmeldeverfahren oder sonstige Beschränkungen ' .
+            'auf der <a href="' . $url . '">Zugangsberechtigungen-Seite</a> einstellen');
+
+
+        $url = \URLHelper::getLink("admin_visibility.php", array('cid' => $this->getId()));
+        $tasks[] = array(
+            "sichtbar schalten",
+
+            'Die kopierte Veranstaltung ist für Teilnehmer zunächst unsichtbar. '.
+            'Sie kann von Administratoren (und abhängig von den Einstellungen an Ihrer Hochschule auch vom Dozenten) sichtbar geschaltet werden. '.
+            'Ändern Sie diese Einstellung unter <a href="' . $url . '">Sichtbarkeit</a>.');
+
 
         $todo_list_id = $list->id;
 
@@ -263,7 +286,6 @@ class Course extends \Seminar
                                      'todo_list_id'),
                              false);
 
-            # TODO: Fehlerbehandlung
             $tmp->save($validate);
         }
     }

@@ -1,4 +1,7 @@
-<? $body_id = "plugin-acc-whatsnext"; ?>
+<?
+$body_id = "plugin-acc-whatsnext";
+PageLayout::setTitle(_("Veranstaltung ergänzen"));
+?>
 
 <? if ($flash['success']) { ?>
   <?= MessageBox::success(_("Veranstaltung erfolgreich kopiert.")) ?>
